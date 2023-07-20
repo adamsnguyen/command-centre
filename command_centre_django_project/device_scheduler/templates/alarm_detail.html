@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Alarm Detail</h1>
+<p><strong>Name:</strong> {{ object.name }}</p>
+<p><strong>Start Time:</strong> {{ object.start_time }}</p>
+<p><strong>End Time:</strong> {{ object.end_time }}</p>
+<p><strong>Device:</strong> {{ object.device_name }}</p>
+<p>
+    <a class="btn btn-primary" href="{% url 'alarm-update' object.pk %}">Edit</a>
+    <a class="btn btn-danger" href="{% url 'alarm-delete' object.pk %}">Delete</a>
+</p>
+{% endblock %}

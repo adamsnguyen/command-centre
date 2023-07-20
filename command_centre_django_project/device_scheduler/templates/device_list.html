@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+form {
+ /* Float both forms to the left */
+ float: left;
+ margin-right: 5px;
+ margin-left:5px;
+}
+
+#td1 {
+    width: 30%;
+}
+
+</style>
+
+<h1>Devices</h1>
+<a class="btn btn-primary" href="{% url 'device-create' %}">Add Device</a>
+<br><br>
+<table class="table">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Options</th>
+        <th>Actions</th>
+        <th></th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for device in devices %}
+        <tr>
+            <td>{{ device.name }}</td>
+            <td>
+                {{ device.status }}</td>
+            <td id="td1">
+                <a class="btn btn-info btn-sm" href="{% url 'device-detail' device.name %}">View</a>
+                <a class="btn btn-primary btn-sm" href="{% url 'device-update' device.name %}">Edit</a>
+                <a class="btn btn-danger btn-sm" href="{% url 'device-delete' device.name %}">Delete</a>
+            </td>
+                <td>
+                <form method="POST" action="{% url 'device-on' device.name %}">
+                    {% csrf_token %}
+                    <a type="submit" class="btn btn-info btn-sm" href="{% url 'device-on' device.name %}">ON</a>
+                </form>
+
+                <form method="POST" action="{% url 'device-off' device.name %}">
+                    {% csrf_token %}
+                    <a type="submit" class="btn btn-danger btn-sm" href="{% url 'device-off' device.name %}">OFF</a>
+                </form>
+            </td>
+            <td></td>
+            <td></td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="8">No devices found.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    // Function to reload the page every 5 seconds
+    function reloadPage() {
+        location.reload();
+    }
+
+    // Set the auto refresh interval (5 seconds)
+    setInterval(reloadPage, 5000); // 5000 milliseconds = 5 seconds
+</script>
+
+{% endblock %}

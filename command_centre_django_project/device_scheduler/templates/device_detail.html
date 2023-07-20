@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Device Detail</h1>
+<p><strong>Name:</strong> {{ device.name }}</p>
+<p><strong>Status:</strong> {{ device.status }}</p>
+
+<p>
+    <a class="btn btn-primary" href="{% url 'device-update' device.pk %}">Edit</a>
+    <a class="btn btn-danger" href="{% url 'device-delete' device.pk %}">Delete</a>
+</p>
+{% endblock %}

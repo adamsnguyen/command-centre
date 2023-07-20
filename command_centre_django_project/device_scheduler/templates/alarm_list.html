@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>Alarms</h1>
+<!-- <a class="btn btn-primary mb-3" href="{% url 'alarm-create' %}">Add Alarm</a> -->
+
+<div class="dropdown">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">        
+        Add Alarm
+    </button>
+    <div class="dropdown-menu">
+    <a class="dropdown-item" href="{% url 'alarm-create' %}">Scheduled Timer</a>
+    <a class="dropdown-item" > test</a>   
+</div>
+</div>
+<br>
+
+{% if alarms %}
+<table class="table">
+    <thead>
+    <tr>
+        <th>Device</th>
+        <th>Status</th>
+        <th>Start Time</th>
+        <th>Duration <br>(Min:Sec)</th>
+        <th>Days</th>  
+        <th>Actions</th>        
+    </tr>
+    </thead>
+    <tbody>
+    {% for alarm in alarms %}
+        <tr>
+            <td>{{ alarm.device }}</td>
+            <td>
+                {% if alarm.status %}
+                <p>Enabled</p>
+                {% else %}
+                <p>Disabled</p>
+                {% endif %}
+            </td>
+           
+            <td>{{ alarm.start_time }}</td>
+            <td>{{ alarm.duration_minutes_seconds|time:"i:s" }}</td>
+            <td><p>
+                {% if alarm.monday %}
+                Mon/
+                {% endif %} 
+                {% if alarm.tuesday %}   
+                Tue/
+                {% endif %} 
+                {% if alarm.wednesday %}   
+                Wed/
+                {% endif %} 
+                {% if alarm.thursday %}   
+                Thu/
+                {% endif %} 
+                {% if alarm.friday %}   
+                Fri/
+                {% endif %} 
+                {% if alarm.saturday %}   
+                Sat/
+                {% endif %}
+                {% if alarm.sunday %}
+                Sun/
+                {% endif %} 
+                </td>        
+            <td>
+                <a class="btn btn-info btn-sm" href="{% url 'alarm-detail' alarm.pk %}">View</a>
+                <a class="btn btn-primary btn-sm" href="{% url 'alarm-update' alarm.pk %}">Edit</a>
+                <a class="btn btn-danger btn-sm" href="{% url 'alarm-delete' alarm.pk %}">Delete</a>
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="5">No alarms found.</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No alarms found.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,11 @@
+{
+  "django": {
+    "app_name": "command-centre",
+    "address": "localhost:8000"
+  },
+  "mqtt": {
+    "broker_url": "localhost",
+    "broker_port": 1883
+  }
+}
+
