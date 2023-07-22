@@ -6,8 +6,6 @@ import paho.mqtt.client as mqtt
 import datetime
 import json
 import requests
-import logging, sys
-from dateutil.relativedelta import relativedelta
 import uvicorn
 import os
 
@@ -16,10 +14,25 @@ scheduled_tasks = {}  # Dictionary to store scheduled tasks and their alarm IDs
 scheduled_tasks_list = []
 scheduled_tasks_meta = {}  # Dictionary to store scheduled tasks and their alarm IDs
 
-class EchoService:
-  def echo(self, msg):
-    logger.info("echoing something from the uicheckapp logger")
-    print(msg)
+# Read configuration from config.json file one directory up
+config_file_path = os.path.join(os.path.dirname(__file__),'..', 'config.json')
+with open(config_file_path, 'r') as config_file:
+    config = json.load(config_file)
+
+# MQTT broker configuration
+mqtt_broker = config["mqtt"]["broker_url"]
+mqtt_port = config["mqtt"]["broker_port"]
+mqtt_client_id = config["device_scheduler_app"]["app_name"]
+
+
+# FastAPI app configuration
+fastapi_port = config["device_scheduler_app"]["port"]
+fastapi_port_address = config["device_scheduler_app"]["address"]
+
+# Django app configuration
+command_centre_address = config["command-centre"]["address"]
+api_active_alarms_path = ["command-centre"]["get_active_alarms_path"]
+api_active_alarms_url = f"{command_centre_address}{api_active_alarms_path}"
 
 class Alarm(BaseModel):
     id: int
@@ -28,27 +41,12 @@ class Alarm(BaseModel):
     duration_minutes_seconds: str
     device_name: str
 
-logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
-logger = logging.getLogger(__name__)
-
-api_url = 'http://localhost:8000/api/active_alarms'
 acknowledgement_url = 'http://localhost:8000/api/acknowledge_alarms/'
 disable_url = 'http://your-api-url/api/disable_alarms/'
 
 
 
 app = FastAPI()
-
-# Read configuration from config.json file one directory up
-config_file_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
-with open(config_file_path, 'r') as config_file:
-    config = json.load(config_file)
-
-# MQTT broker configuration
-mqtt_broker = config["mqtt"]["broker_url"]
-mqtt_port = config["mqtt"]["broker_port"]
-mqtt_client_id = "scheduler_alarm_server"
-
 mqtt_client = mqtt.Client(client_id=mqtt_client_id) 
 
 def send_acknowledgement(new_alarms):
@@ -83,40 +81,6 @@ def remove_from_list(alarms_to_remove):
 def remove_extra_alarms(extra_alarms):
     for alarm in extra_alarms:
         local_alarm_list.remove(alarm)
-
-# MQTT Callbacks
-def on_connect(client, userdata, flags, rc):
-    print("Connected to MQTT broker")
-    # Subscribe to the relevant topics
-    client.subscribe("/valve1/change_status")
-    client.subscribe("/valve2/change_status")
-    client.subscribe("/valve3/change_status")
-
-def on_message(client, userdata, msg):
-    topic = msg.topic
-    payload = msg.payload.decode()
-    print(f"Received message. Topic: {topic}, Payload: {payload}")
-    # Process the received message based on the topic
-    topic_parts = topic.split('/')
-    device_name = topic_parts[1]
-    device_topic = topic_parts[2]
-
-
-    #     if payload == "ON":
-    #         # Code to turn on valve1
-    #         print("Valve1 turned ON")
-    #     elif payload == "OFF":
-    #         # Code to turn off valve1
-    #         print("Valve1 turned OFF")
-    # elif topic == "/valve2/change_status":
-    #     if payload == "ON":
-    #         # Code to turn on valve2
-    #         print("Valve2 turned ON")
-    #     elif payload == "OFF":
-    #         # Code to turn off valve2
-    #         print("Valve2 turned OFF")
-
-# MQTT Setup
 
 mqtt_client.connect(mqtt_broker, mqtt_port, 60)
 
@@ -209,14 +173,12 @@ async def schedule_alarm(alarm):
     print(days_enabled)
 
     while(alarm["status"]):
-        # skip = False
-
         # print(next_enabled_day)
         start_time = datetime.datetime.strptime(alarm['start_time'], "%H:%M:%S")
         next_start = get_next_alarm(days_enabled, start_time)
         duration_minutes_seconds = datetime.datetime.strptime(alarm['duration_minutes_seconds'], "%H:%M:%S")
-
         next_end = next_start + datetime.timedelta(minutes=duration_minutes_seconds.minute, seconds=duration_minutes_seconds.second)
+
 
         print(f"next start: {next_start}")
         print(f"next end: {next_end}")     
@@ -237,7 +199,7 @@ async def schedule_alarm(alarm):
                 await asyncio.sleep(time_diff)
                 # Turn off the device
                 mqtt_client.publish(f"/{alarm['device']}/change_status", "OFF", qos=1, retain=True)
-                print(f"Scheduled alarm to turn OFF device: {alarm['device']} at {alarm['duration_minutes_seconds']}")
+                print(f"Scheduled alarm to turn OFF device: {alarm['device']} at {next_end}")
 
 @router.post("/alarms/delete")
 def delete_alarm(alarm_id: int):
@@ -302,7 +264,7 @@ async def get_alarm():
     global scheduled_tasks
 
     while True:
-        response = requests.get(api_url)
+        response = requests.get(api_active_alarms_url)
         if response.status_code == 200:
             new_alarm_list = response.json()
             new_alarms = []
@@ -333,23 +295,13 @@ async def get_alarm():
 
         else:
             print('Request failed with status code:', response.status_code)
-            # EchoService.echo('Request failed with status code:', response.status_code)
-            # logger.info()
 
-        
-
-        # if scheduled_tasks:
-        #     # Wait for all tasks to complete
-        #     print("task list: ", scheduled_tasks_list)
-        #     print("length: ", len(scheduled_tasks_list))
-        #     await asyncio.gather(*scheduled_tasks_list)
-
-        # Optionally introduce a delay before checking for new alarms again
         await asyncio.sleep(10)  # Adjust the delay as per your requirements    
 
 app.include_router(router)
 
 if __name__ == "__main__":
     mqtt_client.loop_start()
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host=fastapi_port_address, port=fastapi_port)
+
     

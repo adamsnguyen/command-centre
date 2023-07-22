@@ -231,10 +231,10 @@ class AppViews:
 
                 print(timer_data)
 
-                # response = requests.post(url, json=payload)
+                response = requests.post(url, json=payload)
 
-                # if response.status_code == 200:
-                #     return redirect('alarm-list')
+                if response.status_code == 200:
+                    return redirect('alarm-list')
         else:
             form = ScheduledTimerForm(instance=alarm)
 
