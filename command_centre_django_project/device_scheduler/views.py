@@ -10,8 +10,8 @@ import json
 import paho.mqtt.client as mqtt
 import os
 
-# Load configuration from config.json file two directories up
-config_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'config.json')
+# Load configuration from config.json file directories
+config_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),'common', 'config.json')
 with open(config_file_path, 'r') as config_file:
     config = json.load(config_file)
 
@@ -255,7 +255,7 @@ class AppViews:
         #         ScheduledTimer.delete()
         #         return redirect('alarm-list')
 
-        return redirect('/alarm')
+        return redirect('/alarms')
     
     def active_alarms(request):
         queryset = ScheduledTimer.objects.filter(status=True)  # Filter only enabled alarms

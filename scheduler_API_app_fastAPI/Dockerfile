@@ -16,17 +16,15 @@ WORKDIR /app
 
 # Copy the requirements.txt file and install Python dependencies
 COPY requirements.txt /app/
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the FastAPI code into the container
-COPY scheduler_api.py /app/
+COPY . /app/
 
-# Copy the config.json file into the container
-COPY config.json /app/
+# Expose port
+EXPOSE 8000
+EXPOSE 1883
 
-# Expose the FastAPI port
-EXPOSE 8001
-
-# Start the FastAPI server
-CMD ["uvicorn", "scheduler_api:app", "--host", "0.0.0.0", "--port", "8001"]
-
+# Set the entrypoint to the custom script
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

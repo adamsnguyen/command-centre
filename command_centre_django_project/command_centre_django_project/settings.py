@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bootstrap4',
     'device_scheduler',
-    'djongo',
     "bootstrap_datepicker_plus",
 ]
 
@@ -85,12 +84,18 @@ WSGI_APPLICATION = 'command_centre_django_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-path = dirname(dirname(dirname(abspath(__file__))))
-secret = os.path.join(path,'secret.json')
+path = dirname((dirname(abspath(__file__))))
+secret = os.path.join(path, 'common', 'config.json')
+# secret = "./common/config.json"
 
 # Read the contents of the JSON file
+# try:
 with open(secret) as file:
     database = json.load(file)
+# except Exception as e:
+
+#     print(os.listdir("/"))
+#     quit()
 
 # Extract the username, password, and database from the JSON data
 engine = database["django_database_settings"]["DATABASE_ENGINE"]
@@ -154,6 +159,14 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Add the following line to set the STATIC_ROOT
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # Or specify your desired directory
+
+# Remove the STATIC_ROOT setting from STATICFILES_DIRS
+STATICFILES_DIRS = [
+    # Add any additional directories here if needed for development
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

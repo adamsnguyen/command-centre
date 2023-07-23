@@ -1,0 +1,6 @@
+Django==4.2.3
+paho_mqtt==1.6.1
+Requests==2.31.0
+django-bootstrap-datepicker-plus
+django-bootstrap4
+psycopg2

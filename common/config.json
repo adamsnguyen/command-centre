@@ -1,11 +1,19 @@
 {
   "command-centre": {
     "app_name": "command-centre",
-    "address": "localhost:8000",
+    "address": "http://localhost:8000",
     "get_active_alarms_path": "/api/active_alarms/",
     "get_devices_path": "/api/get_devices/",
-    "post_device_status_update": "/api/update_device_status/{device.name}"
+    "post_device_status_update": "/api/update_device_status/"
   },
+  "django_database_settings": {
+      "DATABASE_ENGINE": "django.db.backends.postgresql_psycopg2",
+      "NAME": "command",
+      "USER": "admin",
+      "PASSWORD": "admin",
+      "HOST": "127.0.0.1",
+      "PORT": "5432"
+   },
   "mqtt": {
     "broker_url": "localhost",
     "broker_port": 1883
@@ -18,7 +26,8 @@
   },
   "device_scheduler_status_checker_app": {
     "app_name": "device_status_checker_server",
-    "address": "localhost:8001"
+    "address": "localhost",
+    "port": "8002"
   }
   
 }

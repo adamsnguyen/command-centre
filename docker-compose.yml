@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  command_centre:
+    build:
+      context: ./command_centre_django_project
+      dockerfile: Dockerfile
+    volumes:
+      - ./common:/app/common:rw  # Mount the parent config.json into the Django app container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - "8000:8000"
+    working_dir: /app
+    network_mode: "host"
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8000"]
+        interval: 5s
+        timeout: 20s
+        retries: 30
+    depends_on:
+      mqtt-broker:
+        condition: service_started
+
+  device_checker_app:
+    build:
+      context: ./device_status_checker_app
+      dockerfile: Dockerfile
+    volumes:
+      - ./common:/app/common:rw  # Mount the parent config.json into FastAPI app 1 container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - "8001:8000"
+    working_dir: /app
+    network_mode: "host"
+    depends_on:
+      command_centre:
+        condition: service_healthy
+      mqtt-broker:
+        condition: service_started
+    
+  device_scheduler_app:
+    build:
+      context: ./scheduler_API_app_fastAPI
+      dockerfile: Dockerfile
+    volumes:
+      - ./common:/app/common:rw  # Mount the parent config.json into FastAPI app 2 container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - "8002:8000"
+    working_dir: /app
+    network_mode: "host" 
+    depends_on:
+      command_centre:
+        condition: service_healthy
+      mqtt-broker:
+        condition: service_started
+        
+  mqtt-broker:
+    image: eclipse-mosquitto:latest
+    container_name: my-mqtt-broker-container
+    network_mode: "host"
+    volumes:
+     - ./mqtt-broker/conf:/mosquitto/config
+     - /etc/timezone:/etc/timezone:ro
+     - /etc/localtime:/etc/localtime:ro

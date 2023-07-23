@@ -15,7 +15,8 @@ scheduled_tasks_list = []
 scheduled_tasks_meta = {}  # Dictionary to store scheduled tasks and their alarm IDs
 
 # Read configuration from config.json file one directory up
-config_file_path = os.path.join(os.path.dirname(__file__),'..', 'config.json')
+# config_file_path = os.path.join(os.path.dirname(__file__),'common', 'config.json')
+config_file_path = "/app/common/config.json"
 with open(config_file_path, 'r') as config_file:
     config = json.load(config_file)
 
@@ -31,7 +32,7 @@ fastapi_port_address = config["device_scheduler_app"]["address"]
 
 # Django app configuration
 command_centre_address = config["command-centre"]["address"]
-api_active_alarms_path = ["command-centre"]["get_active_alarms_path"]
+api_active_alarms_path = config["command-centre"]["get_active_alarms_path"]
 api_active_alarms_url = f"{command_centre_address}{api_active_alarms_path}"
 
 class Alarm(BaseModel):
@@ -190,7 +191,7 @@ async def schedule_alarm(alarm):
             print("time to next: ", next_start - datetime.datetime.now())
             await asyncio.sleep(time_diff)
             # Turn on the device
-            mqtt_client.publish(f"/{alarm['device']}/change_status", "ON", qos=1, retain=True)
+            print(mqtt_client.publish(f"/{alarm['device']}/change_status", "ON", qos=1, retain=True))
             print(f"Scheduled alarm to turn ON device: {alarm['device']} at {alarm['start_time']}")
 
             if next_end > current_time:

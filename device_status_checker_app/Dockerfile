@@ -13,9 +13,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire app directory into the container
 COPY . /app/
 
-# Expose the port that the FastAPI app will be running on
-EXPOSE 8002
+EXPOSE 8000:8000
+EXPOSE 1883
 
-# Command to run the FastAPI app using Uvicorn
-CMD ["uvicorn", "device_status_checker:app", "--host", "0.0.0.0", "--port", "8002"]
+# Set the entrypoint to the custom script
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 

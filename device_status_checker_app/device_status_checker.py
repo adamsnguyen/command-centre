@@ -13,21 +13,22 @@ devices_status = {}
 poll_counter = 0
 
 # Read configuration from config.json file one directory up
-config_file_path = os.path.join(os.path.dirname(__file__), 'config.json')
+# config_file_path = os.path.join(os.path.dirname(__file__),'common', 'config.json')
+config_file_path = "/app/common/config.json"
 with open(config_file_path, 'r') as config_file:
     config = json.load(config_file)
 
 # Django app configuration
 django_app_address = config["command-centre"]["address"]
-django_api_url = f"http://{django_app_address}/api/"
+post_device_status_update_path = config["command-centre"]["post_device_status_update"]
 
 # MQTT broker configuration
 mqtt_broker_url = config["mqtt"]["broker_url"]
 mqtt_broker_port = config["mqtt"]["broker_port"]
 
 # FastAPI app configuration
-fastapi_port = config["app"]["port"]
-fastapi_port_address = config["app"]["address"]
+fastapi_port = config["device_scheduler_status_checker_app"]["port"]
+fastapi_port_address = config["device_scheduler_status_checker_app"]["address"]
 
 # Function to send MQTT message to request status
 def send_mqtt_request(device_name):
@@ -57,7 +58,7 @@ def update_local_device_status(device_name, status):
 # Function to post status update to Django
 def post_status_to_django(device_name, status):
     # Implement logic to post status to the Django API using requests library
-    url = f"{django_api_url}update_device_status/{device_name}"
+    url = f"{django_app_address}{post_device_status_update_path}{device_name}"
     data = {"status": status}
     response = requests.post(url, data=data)
     if response.status_code != 200:
