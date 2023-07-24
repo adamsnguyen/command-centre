@@ -14,13 +14,14 @@ services:
     working_dir: /app
     network_mode: "host"
     healthcheck:
-      test: ["CMD", "/bin/sh", "/script.sh"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
       interval: 5s
       timeout: 20s
-      retries: 3
+      retries: 10
     depends_on:
       mqtt-broker:
         condition: service_started
+      
     # logging:
     #   driver: none
 
@@ -41,8 +42,8 @@ services:
         condition: service_healthy
       mqtt-broker:
         condition: service_started
-    # logging:
-    #   driver: none
+    logging:
+      driver: none
 
     
   device_scheduler_app:

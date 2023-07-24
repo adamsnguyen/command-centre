@@ -59,12 +59,14 @@ def update_local_device_status(device_name, status):
 # Function to post status update to Django
 def post_status_to_django(device_name, status):
     # Implement logic to post status to the Django API using requests library
-    url = f"{django_app_address}{post_device_status_update_path}{device_name}"
-    data = {"status": status}
-    response = requests.post(url, data=data)
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to update device status in Django.")
-
+    try:
+        url = f"{django_app_address}{post_device_status_update_path}{device_name}"
+        data = {"status": status}
+        response = requests.post(url, data=data)
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="Failed to update device status in Django.")
+    except Exception as e:
+        print(e)
 # MQTT client setup
 mqtt_client = mqtt.Client()
 
@@ -85,22 +87,27 @@ def subscribe_to_topics():
 # Function to get devices from Django API
 async def get_devices_from_django():
     url = f"http://localhost:8000/api/get_devices"
-    response = requests.get(url)
-    print(response.json())
-    if response.status_code == 200:
-        return response.json()
-    else:
+    try:
+        response = requests.get(url)
+        print(response.json())
+        if response.status_code == 200:
+            return response.json()
         raise HTTPException(status_code=response.status_code, detail="Failed to retrieve devices from Django.")
+    except Exception as e:
+        print(e)
 
 async def background_task():
     global poll_counter
     while True:
         if poll_counter == 0:
-            devices = await get_devices_from_django()
-            devices_status.clear()  # Clear the existing status to re-populate it with updated device details
-            for device in devices:
-                devices_status[device["name"]] = device["status"]
-                send_mqtt_request(device["name"])
+            try:
+                devices = await get_devices_from_django()
+                devices_status.clear()  # Clear the existing status to re-populate it with updated device details
+                for device in devices:
+                    devices_status[device["name"]] = device["status"]
+                    send_mqtt_request(device["name"])
+            except Exception as e:
+                print(e)
 
         poll_counter = (poll_counter + 1) % 4
         await asyncio.sleep(1)  # Poll every 10 seconds

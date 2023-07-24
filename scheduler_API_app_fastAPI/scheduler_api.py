@@ -320,42 +320,46 @@ async def get_alarm():
     global scheduled_tasks
     global devices
     global mqtt_client
+    response = None
 
     while True:
         try:
             response = requests.get(api_active_alarms_url)
+            if response is None:
+                break
+       
+            elif response.status_code == 200:
+                new_alarm_list = response.json()
+                new_alarms = []
+                for alarm in new_alarm_list:
+                    if alarm not in local_alarm_list:
+                        local_alarm_list.append(alarm)
+                        new_alarms.append(alarm)
+
+                        if alarm["id"] not in scheduled_tasks:
+                            task = asyncio.create_task(schedule_alarm(alarm))
+                            scheduled_tasks[alarm["id"]] = task
+                            scheduled_tasks_meta[alarm["id"]] = alarm
+                            scheduled_tasks_list.append(task)
+                
+                # Check for extra alarms in the local list
+                extra_alarms = []
+                for alarm in local_alarm_list:
+                    if alarm not in new_alarm_list:
+                        extra_alarms.append(alarm)
+                        # logger.info(f"extra alarms: {extra_alarms}")
+
+                if len(new_alarms) > 0:
+                    print(new_alarms)
+                    send_acknowledgement(new_alarms)
+
+                if len(extra_alarms) > 0:
+                    remove_extra_alarms(extra_alarms)
+
+            else:
+                print('Request failed with status code:', response.status_code)
         except Exception as e:
             print(e)
-        if response.status_code == 200:
-            new_alarm_list = response.json()
-            new_alarms = []
-            for alarm in new_alarm_list:
-                if alarm not in local_alarm_list:
-                    local_alarm_list.append(alarm)
-                    new_alarms.append(alarm)
-
-                    if alarm["id"] not in scheduled_tasks:
-                        task = asyncio.create_task(schedule_alarm(alarm))
-                        scheduled_tasks[alarm["id"]] = task
-                        scheduled_tasks_meta[alarm["id"]] = alarm
-                        scheduled_tasks_list.append(task)
-            
-            # Check for extra alarms in the local list
-            extra_alarms = []
-            for alarm in local_alarm_list:
-                if alarm not in new_alarm_list:
-                    extra_alarms.append(alarm)
-                    # logger.info(f"extra alarms: {extra_alarms}")
-
-            if len(new_alarms) > 0:
-                print(new_alarms)
-                send_acknowledgement(new_alarms)
-
-            if len(extra_alarms) > 0:
-                remove_extra_alarms(extra_alarms)
-
-        else:
-            print('Request failed with status code:', response.status_code)
 
         await asyncio.sleep(10)  # Adjust the delay as per your requirements    
 
