@@ -27,7 +27,8 @@
   "device_scheduler_status_checker_app": {
     "app_name": "device_status_checker_server",
     "address": "localhost",
-    "port": "8002"
+    "port": "8002",
+    "device_status_path": "/device_status/"
   }
   
 }

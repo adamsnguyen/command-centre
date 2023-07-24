@@ -5,6 +5,7 @@ import paho.mqtt.client as mqtt
 import requests
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.responses import JSONResponse
+import uvicorn
 
 app = FastAPI()
 
@@ -101,7 +102,7 @@ async def background_task():
                 devices_status[device["name"]] = device["status"]
                 send_mqtt_request(device["name"])
 
-        poll_counter = (poll_counter + 1) % 10
+        poll_counter = (poll_counter + 1) % 4
         await asyncio.sleep(1)  # Poll every 10 seconds
 
 @app.on_event("startup")
@@ -115,7 +116,18 @@ async def startup_event():
 async def get_devices_status():
     return devices_status
 
+# returns device status
+@app.get("/device_status/{device}")
+async def device_status(device: str):
+    global devices_status
+    status: str
+    try:
+        status = devices_status[device]
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"status": status}
+
 if __name__ == "__main__":
     mqtt_client.loop_start()
-    import uvicorn
     uvicorn.run(app, host=fastapi_port_address, port=fastapi_port)
