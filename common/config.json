@@ -29,6 +29,11 @@
     "address": "localhost",
     "port": "8002",
     "device_status_path": "/device_status/"
+  },
+  "scheduler_mqtt_helper_app": {
+    "app_name": "scheduler_mqtt_helper_app",
+    "address": "localhost",
+    "port": "8003"
   }
   
 }

@@ -21,6 +21,8 @@ services:
     depends_on:
       mqtt-broker:
         condition: service_started
+      db:
+        condition: service_started
       
     # logging:
     #   driver: none
@@ -42,13 +44,12 @@ services:
         condition: service_healthy
       mqtt-broker:
         condition: service_started
-    logging:
-      driver: none
-
-    
+    # logging:
+    #   driver: none
+   
   device_scheduler_app:
     build:
-      context: ./scheduler_API_app_fastAPI
+      context: ./scheduler_app
       dockerfile: Dockerfile
     volumes:
       - ./common:/app/common:rw  # Mount the parent config.json into FastAPI app 2 container
@@ -56,6 +57,26 @@ services:
       - /etc/localtime:/etc/localtime:ro
     # ports:
     #   - "8002:8000"
+    working_dir: /app
+    network_mode: "host" 
+    depends_on:
+      command_centre:
+        condition: service_healthy
+      mqtt-broker:
+        condition: service_started
+      scheduler_mqtt_helper:
+        condition: service_started
+
+  scheduler_mqtt_helper:
+    build:
+      context: ./scheduler_mqtt_helper_app
+      dockerfile: Dockerfile
+    volumes:
+      - ./common:/app/common:rw  # Mount the parent config.json into FastAPI app 2 container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    # ports:
+    #   - "8003:8000"
     working_dir: /app
     network_mode: "host" 
     depends_on:
@@ -77,7 +98,7 @@ services:
     image: postgres
     restart: always
     env_file: 
-      - postgres.env
+      - ./common/postgres.env
     network_mode: "host"
     volumes:
        - ./data:/var/lib/postgresql/data

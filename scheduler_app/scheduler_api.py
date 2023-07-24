@@ -2,12 +2,10 @@ import asyncio
 from fastapi import FastAPI, Request
 from fastapi import APIRouter
 from pydantic import BaseModel
-import paho.mqtt.client as mqtt
 import datetime
 import json
 import requests
 import uvicorn
-from fastapi_mqtt import FastMQTT, MQTTConfig
 
 local_alarm_list = []  # Local list to store enabled alarms
 scheduled_tasks = {}  # Dictionary to store scheduled tasks and their alarm IDs
@@ -19,11 +17,6 @@ devices = []
 config_file_path = "/app/common/config.json"
 with open(config_file_path, 'r') as config_file:
     config = json.load(config_file)
-
-# MQTT broker configuration
-mqtt_broker = config["mqtt"]["broker_url"]
-mqtt_port = config["mqtt"]["broker_port"]
-mqtt_client_id = config["device_scheduler_app"]["app_name"]
 
 # FastAPI app configuration
 fastapi_port = config["device_scheduler_app"]["port"]
@@ -40,6 +33,11 @@ status_checker_port = config["device_scheduler_status_checker_app"]["port"]
 status_checker_path = config["device_scheduler_status_checker_app"]["device_status_path"]
 device_status_url = f"http://{status_checker_address}:{status_checker_port}{status_checker_path}"
 
+# scheduler_mqtt_helper_app
+scheduler_mqtt_helper_address = config["scheduler_mqtt_helper_app"]["address"]
+scheduler_mqtt_helper_port = config["scheduler_mqtt_helper_app"]["port"]
+scheduler_mqtt_helper_url = f"http://{scheduler_mqtt_helper_address}:{scheduler_mqtt_helper_port}"
+
 class Alarm(BaseModel):
     id: int
     name: str
@@ -51,28 +49,26 @@ acknowledgement_url = 'http://localhost:8000/api/acknowledge_alarms/'
 disable_url = 'http://your-api-url/api/disable_alarms/'
 
 app = FastAPI()
-# mqtt_client = mqtt.Client(client_id=mqtt_client_id)
-mqtt_client = mqtt.Client()
 
 # Dictionary to keep track of expected acknowledgments
 expected_acknowledgements = {}
 
 async def publish_with_acknowledgement(device:str, topic_suffix:str, payload, qos=1, retain=False):
-    global mqtt_client
     max_retries = 10
     count = 0
     status: str
     confirmed_status = False
     topic=f"/{device}{topic_suffix}"
-    print(topic)
-    mqtt_client.publish(topic, payload, qos, retain)
-    print(f"Message sent to topic {topic}. Waiting for acknowledgement...")
+
+    mqtt_publish_url = f"{scheduler_mqtt_helper_url}/{device}/change_status/{payload}"
+    print(mqtt_publish_url)
+    response = requests.get(mqtt_publish_url)
+    
     while(not confirmed_status):
+        print(f"MQTT message publish request to {topic} with payload {payload}. Waiting for acknowledgement...")
         await asyncio.sleep(2)  # wait for 5 seconds for acknowledgement
-        url = device_status_url+device
-        print(url)
-        response = requests.get(url)
-        # print(response.json())
+        status_check_url = device_status_url+device
+        response = requests.get(status_check_url)
         device_status_msg = response.json()
         status = device_status_msg['status']
 
@@ -83,26 +79,11 @@ async def publish_with_acknowledgement(device:str, topic_suffix:str, payload, qo
             break
         else:  # if the loop completed and no acknowledgement received
             print(f"Attempting to send command {payload} again")
-            mqtt_client.publish(topic, payload, qos, retain)
+            response = requests.get(mqtt_publish_url)
         count+=1
 
         if count == max_retries:
             break
-
-def on_message(client, userdata, msg):
-    print(f"Received response: {msg.payload.decode('utf-8')} for message with topic {msg.topic}")
-    if msg.payload.decode("utf-8") == 'Acknowledge':
-        # Check if this message is an acknowledgment
-        if msg.topic in expected_acknowledgements:
-            print("Confirmed message sent")
-            del expected_acknowledgements[msg.topic]  # Remove from dictionary of expected acknowledgments
-        # # Cancel the retry task
-        # if msg.topic in scheduled_tasks:
-        #     task = scheduled_tasks[msg.topic]
-        #     task.cancel()
-        #     del scheduled_tasks[msg.topic]
-            
-mqtt_client.on_message = on_message
 
 def send_acknowledgement(new_alarms):
     payload = {
@@ -310,23 +291,19 @@ async def set_alarm(req: Request):
         scheduled_tasks_meta[alarm["id"]] = alarm
         scheduled_tasks_list.append(task)
 
-        # if scheduled_tasks:
-        #     await asyncio.gather(*scheduled_tasks_list)
-
 async def get_alarm():
     global local_alarm_list
     global scheduled_tasks_list
     global scheduled_tasks_meta
     global scheduled_tasks
     global devices
-    global mqtt_client
     response = None
 
     while True:
         try:
             response = requests.get(api_active_alarms_url)
             if response is None:
-                break
+                continue
        
             elif response.status_code == 200:
                 new_alarm_list = response.json()
@@ -365,10 +342,7 @@ async def get_alarm():
 
 app.include_router(router)
 
-mqtt_client.connect(mqtt_broker, mqtt_port, 60)
-
 if __name__ == "__main__":
-    mqtt_client.loop_start()
     uvicorn.run(app, host=fastapi_port_address, port=fastapi_port)
 
 
