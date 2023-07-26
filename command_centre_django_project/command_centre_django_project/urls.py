@@ -4,7 +4,7 @@ from device_scheduler.views import AppViews
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', AppViews.HomeView.as_view(), name='home'),
+    path('', AppViews.home, name='home'),
     path('login/', AppViews.CustomLoginView.as_view(), name='login'),
     path('logout/', AppViews.CustomLogoutView.as_view(), name='logout'),
     path('devices/', AppViews.DeviceListView.as_view(), name='device-list'),

@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import DeviceForm, ScheduledTimerForm
 from .models import Device, ScheduledTimer, Alarm
-from itertools import chain
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -22,6 +22,9 @@ import requests
 
 class AppViews:
 
+    def home(request):
+        return render(request, 'home.html', {'api_key': settings.GOOGLE_MAPS_API_KEY})
+    
     class CustomLoginView(LoginView):
         template_name = 'login.html'
 
@@ -30,6 +33,7 @@ class AppViews:
 
     class HomeView(TemplateView):
         template_name = 'home.html'
+        
 
     # def get_device_statuses():
     #     devices = Device.objects.all()

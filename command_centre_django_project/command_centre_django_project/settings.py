@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-civpu*h-yx2(eqg1++yno2w337zxd81d$7-$(pd99dp$lu(x&=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'bootstrap4',
     'device_scheduler',
     "bootstrap_datepicker_plus",
+    'django_extensions',
+    'bootstrap5',
 ]
 
 MIDDLEWARE = [
@@ -85,12 +87,12 @@ WSGI_APPLICATION = 'command_centre_django_project.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 path = dirname((dirname(abspath(__file__))))
-secret = os.path.join(path, 'common', 'config.json')
+configs = os.path.join(path, 'common', 'config.json')
 # secret = "./common/config.json"
 
 # Read the contents of the JSON file
 # try:
-with open(secret) as file:
+with open(configs) as file:
     database = json.load(file)
 # except Exception as e:
 
@@ -158,10 +160,10 @@ STATICFILES_DIRS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # Add the following line to set the STATIC_ROOT
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # Or specify your desired directory
+STATIC_ROOT = '/app/static'  # Or specify your desired directory
 
 # Remove the STATIC_ROOT setting from STATICFILES_DIRS
 STATICFILES_DIRS = [
@@ -174,3 +176,11 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ALLOWED_HOSTS = ['*']
+
+path = dirname((dirname(abspath(__file__))))
+secrets_filepath = os.path.join(path, 'common', 'secret.json')
+
+with open(secrets_filepath) as secrets_file:
+    secrets = json.load(secrets_file)
+
+GOOGLE_MAPS_API_KEY = secrets["GOOGLE_MAPS_API_KEY"]
