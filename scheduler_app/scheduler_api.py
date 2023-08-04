@@ -151,30 +151,41 @@ def get_true_days_from_alarm(alarm):
 
     return days
 
-def get_next_alarm(days_list, time):
+def get_next_alarm(days_list, day_check, time):
     
     weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']  
     days = [day.capitalize() for day in days_list]  # Capitalize the days in the list
     days.sort(key=lambda day: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].index(day))
 
-    current_day = datetime.datetime.today().strftime('%A')
+    day_check_string = day_check.strftime('%A')
     index = 0
 
-    if current_day in days:
-        next_enabled_day = days[days.index(current_day.capitalize()):][0]
+    print(days)
+    print(day_check_string)
+    if day_check_string in days:
+        next_enabled_day = days[days.index(day_check_string.capitalize()):][0]
+        print("True")
+        print(next_enabled_day)
     else:
         next_enabled_day = days[0]
+        print("False")
+        print(next_enabled_day)
         
-    today = datetime.date.today()
-    days_ahead = (weekdays.index(next_enabled_day) - today.weekday() + 7) % 7
-
-    target_day = today + datetime.timedelta(days=days_ahead)
-
+    days_ahead = (weekdays.index(next_enabled_day) - day_check.weekday() + 7) % 7
+    print(days_ahead)
+    target_day = day_check + datetime.timedelta(days=days_ahead)
+    print(target_day)
     next_alarm = datetime.datetime.combine(target_day, datetime.datetime.min.time()) + datetime.timedelta(hours=time.hour, minutes=time.minute)
+    print(next_alarm)
 
     if next_alarm < datetime.datetime.now():
-        next_alarm = next_alarm + datetime.timedelta(days=7)
+        print("Already passed")
+        day_after = day_check + datetime.timedelta(days=1)
+        print(day_after)
+        next_alarm = get_next_alarm(days_list, day_after, time)
+        
 
+    print(next_alarm)
     return next_alarm
 
     # return next_enabled_day
@@ -209,10 +220,10 @@ async def schedule_alarm(alarm):
     while(alarm["status"]):
         # print(next_enabled_day)
         start_time = datetime.datetime.strptime(alarm['start_time'], "%H:%M:%S")
-        next_start = get_next_alarm(days_enabled, start_time)
+        today = datetime.datetime.today()
+        next_start = get_next_alarm(days_enabled, today, start_time)
         duration_minutes_seconds = datetime.datetime.strptime(alarm['duration_minutes_seconds'], "%H:%M:%S")
         next_end = next_start + datetime.timedelta(minutes=duration_minutes_seconds.minute, seconds=duration_minutes_seconds.second)
-
 
         print(f"next start: {next_start}")
         print(f"next end: {next_end}")     
